@@ -94,7 +94,10 @@
 
   <div class="header">
     <h1>Negozio della classe</h1>
-    <div class="saldo" id="saldo">Caricamento...</div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">I miei ottenuti</a>
+      <div class="saldo" id="saldo">Caricamento...</div>
+    </div>
   </div>
 
   <div id="messaggio-generale"></div>
@@ -123,7 +126,20 @@
 
       caricaSaldo(session.user.id);
       caricaProdotti();
+      caricaContatoreStorico(session.user.id);
     }
+
+    async function caricaContatoreStorico(idUtente) {
+      const { count, error } = await client
+        .from("transazioni")
+        .select("*", { count: "exact", head: true })
+        .eq("id_utente", idUtente)
+        .eq("tipo", "acquisto")
+        .eq("usato", false);
+
+      if (!error) {
+        document.getElementById("link-storico").textContent = `Da usare (${count})`;
+      }
 
     async function caricaSaldo(idUtente) {
       const { data, error } = await client
@@ -137,7 +153,7 @@
       if (error) {
         saldoEl.textContent = "Errore saldo";
       } else {
-        saldoEl.textContent = data.saldo + " cast";
+        saldoEl.textContent = data.saldo + " Ca$t";
       }
     }
 
@@ -174,8 +190,8 @@
           ${immagine}
           <h3>${prodotto.nome}</h3>
           <p>${prodotto.descrizione ?? ""}</p>
-          <div class="prezzo">${prodotto.prezzo_crediti} cast</div>
-          <button class="acquista">Acquista</button>
+          <div class="prezzo">${prodotto.prezzo_crediti} Ca$t</div>
+          <button class="acquista">Ottieni</button>
           <div class="messaggio-card" style="margin-top:8px; font-size:12px;"></div>
         `;
 
@@ -184,7 +200,7 @@
 
         bottone.addEventListener("click", async () => {
           bottone.disabled = true;
-          bottone.textContent = "Acquisto in corso...";
+          bottone.textContent = "Un attimo...";
           messaggioCard.textContent = "";
 
           const { data: { session } } = await client.auth.getSession();
@@ -194,7 +210,7 @@
           });
 
           bottone.disabled = false;
-          bottone.textContent = "Acquista";
+          bottone.textContent = "Ottieni";
 
           if (error) {
             messaggioCard.textContent = "Errore tecnico, riprova.";
@@ -203,11 +219,12 @@
           }
 
           if (data === "ok") {
-            messaggioCard.textContent = "Acquistato!";
+            messaggioCard.textContent = "Ottenuto!";
             messaggioCard.style.color = "#16a34a";
             caricaSaldo(session.user.id);
+            caricaContatoreStorico(session.user.id);
           } else if (data === "saldo_insufficiente") {
-            messaggioCard.textContent = "Cast insufficienti.";
+            messaggioCard.textContent = "Ca$t insufficienti.";
             messaggioCard.style.color = "#dc2626";
           } else if (data === "prodotto_non_disponibile") {
             messaggioCard.textContent = "Non più disponibile.";
