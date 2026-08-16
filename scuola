@@ -1,0 +1,12 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient('URL_PROGETTO', 'ANON_KEY')
+
+async function login(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) {
+    // mostra messaggio di errore
+  } else {
+    // reindirizza alla home/shop
+  }
+}
