@@ -137,7 +137,7 @@
       if (error) {
         saldoEl.textContent = "Errore saldo";
       } else {
-        saldoEl.textContent = data.saldo + " ca$t";
+        saldoEl.textContent = data.saldo + " cast";
       }
     }
 
@@ -174,9 +174,49 @@
           ${immagine}
           <h3>${prodotto.nome}</h3>
           <p>${prodotto.descrizione ?? ""}</p>
-          <div class="prezzo">${prodotto.prezzo_crediti} ca$t</div>
+          <div class="prezzo">${prodotto.prezzo_crediti} cast</div>
           <button class="acquista">Acquista</button>
+          <div class="messaggio-card" style="margin-top:8px; font-size:12px;"></div>
         `;
+
+        const bottone = card.querySelector("button.acquista");
+        const messaggioCard = card.querySelector(".messaggio-card");
+
+        bottone.addEventListener("click", async () => {
+          bottone.disabled = true;
+          bottone.textContent = "Acquisto in corso...";
+          messaggioCard.textContent = "";
+
+          const { data: { session } } = await client.auth.getSession();
+
+          const { data, error } = await client.rpc("acquista_prodotto", {
+            p_id_prodotto: prodotto.id
+          });
+
+          bottone.disabled = false;
+          bottone.textContent = "Acquista";
+
+          if (error) {
+            messaggioCard.textContent = "Errore tecnico, riprova.";
+            messaggioCard.style.color = "#dc2626";
+            return;
+          }
+
+          if (data === "ok") {
+            messaggioCard.textContent = "Acquistato!";
+            messaggioCard.style.color = "#16a34a";
+            caricaSaldo(session.user.id);
+          } else if (data === "saldo_insufficiente") {
+            messaggioCard.textContent = "Cast insufficienti.";
+            messaggioCard.style.color = "#dc2626";
+          } else if (data === "prodotto_non_disponibile") {
+            messaggioCard.textContent = "Non più disponibile.";
+            messaggioCard.style.color = "#dc2626";
+          } else {
+            messaggioCard.textContent = "Errore: " + data;
+            messaggioCard.style.color = "#dc2626";
+          }
+        });
 
         griglia.appendChild(card);
       });
