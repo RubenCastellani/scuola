@@ -148,7 +148,7 @@
         .from("prodotti")
         .select("*")
         .eq("disponibile", true)
-        .order("prezzo_ca$t", { ascending: true });
+        .order("prezzo_crediti", { ascending: true });
 
       if (error) {
         griglia.innerHTML = "<p>Errore nel caricamento degli aiuti.</p>";
@@ -174,7 +174,7 @@
           ${immagine}
           <h3>${prodotto.nome}</h3>
           <p>${prodotto.descrizione ?? ""}</p>
-          <div class="prezzo">${prodotto.prezzo_ca$t} ca$t</div>
+          <div class="prezzo">${prodotto.prezzo_crediti} ca$t</div>
           <button class="acquista">Acquista</button>
         `;
 
