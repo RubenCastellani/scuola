@@ -137,7 +137,7 @@
       if (error) {
         saldoEl.textContent = "Errore saldo";
       } else {
-        saldoEl.textContent = data.saldo + " crediti";
+        saldoEl.textContent = data.saldo + " ca$t";
       }
     }
 
@@ -148,7 +148,7 @@
         .from("prodotti")
         .select("*")
         .eq("disponibile", true)
-        .order("prezzo_crediti", { ascending: true });
+        .order("prezzo_ca$t", { ascending: true });
 
       if (error) {
         griglia.innerHTML = "<p>Errore nel caricamento degli aiuti.</p>";
@@ -174,7 +174,7 @@
           ${immagine}
           <h3>${prodotto.nome}</h3>
           <p>${prodotto.descrizione ?? ""}</p>
-          <div class="prezzo">${prodotto.prezzo_crediti} crediti</div>
+          <div class="prezzo">${prodotto.prezzo_ca$t} ca$t</div>
           <button class="acquista">Acquista</button>
         `;
 
