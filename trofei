@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trofei</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f4f4f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .header {
+      max-width: 900px;
+      margin: 0 auto 24px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .header h1 { font-size: 18px; margin: 0; }
+    .header a { font-size: 13px; color: #18181b; text-decoration: underline; }
+
+    .griglia {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .card.bloccato {
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+    .icona {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #e4e4e7;
+      margin: 0 auto 12px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+    .card.sbloccato .icona {
+      background: #fde68a;
+    }
+    .card h3 {
+      font-size: 14px;
+      margin: 0 0 6px 0;
+    }
+    .card p {
+      font-size: 12px;
+      color: #666;
+      margin: 0 0 8px 0;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .badge.sbloccato {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+    .badge.bloccato {
+      background: #e4e4e7;
+      color: #666;
+    }
+    .data-sblocco {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Trofei</h1>
+    <a href="negozio.html">← Torna al negozio</a>
+  </div>
+
+  <div class="griglia" id="griglia-trofei">
+    <p style="text-align:center; grid-column: 1 / -1;">Caricamento trofei...</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://liasogcnxwgiabfcvzzx.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_aMHhY_bbtDHYpmveZgyqqQ_aI0CWc3T";
+
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function inizializza() {
+      const { data: { session } } = await client.auth.getSession();
+
+      if (!session) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      caricaTrofei(session.user.id);
+    }
+
+    async function caricaTrofei(idUtente) {
+      const griglia = document.getElementById("griglia-trofei");
+
+      // Tutto il catalogo trofei
+      const { data: trofei, error: erroreTrofei } = await client
+        .from("trofei")
+        .select("*");
+
+      if (erroreTrofei) {
+        griglia.innerHTML = "<p>Errore nel caricamento dei trofei.</p>";
+        return;
+      }
+
+      // I trofei sbloccati da questo utente
+      const { data: sbloccati, error: erroreSbloccati } = await client
+        .from("utente_trofei")
+        .select("id_trofeo, data_sblocco")
+        .eq("id_utente", idUtente);
+
+      if (erroreSbloccati) {
+        griglia.innerHTML = "<p>Errore nel caricamento dei tuoi progressi.</p>";
+        return;
+      }
+
+      const mappaSbloccati = {};
+      sbloccati.forEach(s => { mappaSbloccati[s.id_trofeo] = s.data_sblocco; });
+
+      if (trofei.length === 0) {
+        griglia.innerHTML = "<p style='grid-column: 1 / -1; text-align:center;'>Nessun trofeo disponibile ancora.</p>";
+        return;
+      }
+
+      griglia.innerHTML = "";
+
+      trofei.forEach(trofeo => {
+        const dataSblocco = mappaSbloccati[trofeo.id];
+        const sbloccato = Boolean(dataSblocco);
+
+        const card = document.createElement("div");
+        card.className = "card " + (sbloccato ? "sbloccato" : "bloccato");
+
+        const dataFormattata = sbloccato
+          ? new Date(dataSblocco).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
+          : "";
+
+        card.innerHTML = `
+          <div class="icona">${sbloccato ? "🏆" : "🔒"}</div>
+          <h3>${trofeo.nome}</h3>
+          <p>${sbloccato ? (trofeo.descrizione ?? "") : (trofeo.condizione_sblocco ?? "Condizione non specificata")}</p>
+          <span class="badge ${sbloccato ? "sbloccato" : "bloccato"}">
+            ${sbloccato ? `+${trofeo.punti_ricompensa} Ca$t` : "Da sbloccare"}
+          </span>
+          ${sbloccato ? `<div class="data-sblocco">Sbloccato il ${dataFormattata}</div>` : ""}
+        `;
+
+        griglia.appendChild(card);
+      });
+    }
+
+    inizializza();
+  </script>
+
+</body>
+</html>
