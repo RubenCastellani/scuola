@@ -96,7 +96,7 @@
     <h1>Negozio della classe</h1>
     <div style="display:flex; align-items:center; gap:12px;">
       <a href="trofei.html" style="font-size:13px; color:#18181b; text-decoration:underline;">Trofei</a>
-      <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">I miei ottenuti</a>
+      <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">Lista acquisti</a>
       <div class="saldo" id="saldo">Caricamento...</div>
     </div>
   </div>
@@ -127,20 +127,6 @@
 
       caricaSaldo(session.user.id);
       caricaProdotti();
-      caricaContatoreStorico(session.user.id);
-    }
-
-    async function caricaContatoreStorico(idUtente) {
-      const { count, error } = await client
-        .from("transazioni")
-        .select("*", { count: "exact", head: true })
-        .eq("id_utente", idUtente)
-        .eq("tipo", "acquisto")
-        .eq("usato", false);
-
-      if (!error) {
-        document.getElementById("link-storico").textContent = `Da usare (${count})`;
-      }
     }
 
     async function caricaSaldo(idUtente) {
@@ -224,7 +210,6 @@
             messaggioCard.textContent = "Ottenuto!";
             messaggioCard.style.color = "#16a34a";
             caricaSaldo(session.user.id);
-            caricaContatoreStorico(session.user.id);
           } else if (data === "saldo_insufficiente") {
             messaggioCard.textContent = "Ca$t insufficienti.";
             messaggioCard.style.color = "#dc2626";
