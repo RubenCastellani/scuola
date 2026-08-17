@@ -111,8 +111,9 @@
         messaggio.textContent = "Errore: " + error.message;
         messaggio.className = "errore";
       } else {
-        messaggio.textContent = "Login riuscito! Benvenuto, " + data.user.email;
+        messaggio.textContent = "Login riuscito! Ti sto portando al negozio...";
         messaggio.className = "successo";
+        window.location.href = "negozio.html";
       }
     }
   </script>
