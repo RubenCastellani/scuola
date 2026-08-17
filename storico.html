@@ -133,14 +133,25 @@
 
       lista.innerHTML = "";
 
-      lista.innerHTML += `<h2 style="font-size:14px; color:#333; margin: 10px 0 4px 4px;">Da usare (${daUsare.length})</h2>`;
+      const titoloDaUsare = document.createElement("h2");
+      titoloDaUsare.style.cssText = "font-size:14px; color:#333; margin: 10px 0 4px 4px;";
+      titoloDaUsare.textContent = `Da usare (${daUsare.length})`;
+      lista.appendChild(titoloDaUsare);
+
       if (daUsare.length === 0) {
-        lista.innerHTML += `<p style="font-size:13px; color:#888; margin: 0 0 10px 4px;">Nessun oggetto in attesa di utilizzo.</p>`;
+        const vuoto = document.createElement("p");
+        vuoto.style.cssText = "font-size:13px; color:#888; margin: 0 0 10px 4px;";
+        vuoto.textContent = "Nessun oggetto in attesa di utilizzo.";
+        lista.appendChild(vuoto);
       } else {
         daUsare.forEach(t => lista.appendChild(creaRiga(t, mappaProdotti, true)));
       }
 
-      lista.innerHTML += `<h2 style="font-size:14px; color:#333; margin: 20px 0 4px 4px;">Già usati (${usati.length})</h2>`;
+      const titoloUsati = document.createElement("h2");
+      titoloUsati.style.cssText = "font-size:14px; color:#333; margin: 20px 0 4px 4px;";
+      titoloUsati.textContent = `Già usati (${usati.length})`;
+      lista.appendChild(titoloUsati);
+
       usati.forEach(t => lista.appendChild(creaRiga(t, mappaProdotti, false)));
     }
 
