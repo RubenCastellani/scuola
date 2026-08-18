@@ -107,6 +107,16 @@
     <p style="text-align:center; grid-column: 1 / -1;">Caricamento aiuti disponibili...</p>
   </div>
 
+  <!-- Popup che appare quando si sblocca un nuovo trofeo -->
+  <div id="overlay-trofeo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:white; border-radius:16px; padding:32px; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+      <div style="font-size:48px; margin-bottom:8px;">🏆</div>
+      <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">Nuovo trofeo sbloccato!</div>
+      <div id="testo-popup-trofeo" style="font-size:14px; color:#555; margin-bottom:20px;"></div>
+      <button onclick="chiudiPopupTrofeo()" style="background:#18181b; color:white; border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-size:14px;">Fantastico!</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://liasogcnxwgiabfcvzzx.supabase.co";
@@ -127,6 +137,7 @@
 
       caricaSaldo(session.user.id);
       caricaProdotti();
+      controllaTrofeiNonNotificati(session.user.id);
     }
 
     async function caricaSaldo(idUtente) {
@@ -206,24 +217,88 @@
             return;
           }
 
-          if (data === "ok") {
+          if (data.status === "ok") {
             messaggioCard.textContent = "Ottenuto!";
             messaggioCard.style.color = "#16a34a";
             caricaSaldo(session.user.id);
-          } else if (data === "saldo_insufficiente") {
+
+            if (data.trofei_sbloccati && data.trofei_sbloccati.length > 0) {
+              mostraPopupTrofeo(data.trofei_sbloccati);
+            }
+          } else if (data.status === "saldo_insufficiente") {
             messaggioCard.textContent = "Ca$t insufficienti.";
             messaggioCard.style.color = "#dc2626";
-          } else if (data === "prodotto_non_disponibile") {
+          } else if (data.status === "prodotto_non_disponibile") {
             messaggioCard.textContent = "Non più disponibile.";
             messaggioCard.style.color = "#dc2626";
           } else {
-            messaggioCard.textContent = "Errore: " + data;
+            messaggioCard.textContent = "Errore: " + data.status;
             messaggioCard.style.color = "#dc2626";
           }
         });
 
         griglia.appendChild(card);
       });
+    }
+
+    async function controllaTrofeiNonNotificati(idUtente) {
+      const { data: nonNotificati, error } = await client
+        .from("utente_trofei")
+        .select("id, id_trofeo")
+        .eq("id_utente", idUtente)
+        .eq("notificato", false);
+
+      if (error || !nonNotificati || nonNotificati.length === 0) return;
+
+      const idTrofei = nonNotificati.map(n => n.id_trofeo);
+
+      const { data: trofei } = await client
+        .from("trofei")
+        .select("id, nome, punti_ricompensa")
+        .in("id", idTrofei);
+
+      const mappaTrofei = {};
+      (trofei || []).forEach(t => { mappaTrofei[t.id] = t; });
+
+      const listaPerPopup = nonNotificati.map(n => mappaTrofei[n.id_trofeo]).filter(Boolean);
+
+      if (listaPerPopup.length > 0) {
+        mostraPopupTrofeo(listaPerPopup);
+      }
+
+      // Segna tutti come notificati, ora che li abbiamo mostrati
+      for (const n of nonNotificati) {
+        await client
+          .from("utente_trofei")
+          .update({ notificato: true })
+          .eq("id", n.id);
+      }
+    }
+
+    function mostraPopupTrofeo(trofei, indice) {
+      indice = indice || 0;
+      if (indice >= trofei.length) return;
+
+      const trofeo = trofei[indice];
+      document.getElementById("testo-popup-trofeo").textContent =
+        `"${trofeo.nome}" — hai guadagnato ${trofeo.punti_ricompensa} Ca$t in più!`;
+
+      const overlay = document.getElementById("overlay-trofeo");
+      overlay.style.display = "flex";
+      overlay.dataset.indice = indice;
+      overlay.dataset.totale = trofei.length;
+      window._trofeiInCoda = trofei;
+    }
+
+    function chiudiPopupTrofeo() {
+      const overlay = document.getElementById("overlay-trofeo");
+      const prossimoIndice = parseInt(overlay.dataset.indice) + 1;
+      overlay.style.display = "none";
+
+      // Se c'erano più trofei sbloccati insieme, mostra il prossimo
+      if (window._trofeiInCoda && prossimoIndice < window._trofeiInCoda.length) {
+        mostraPopupTrofeo(window._trofeiInCoda, prossimoIndice);
+      }
     }
 
     inizializza();
