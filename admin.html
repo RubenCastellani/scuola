@@ -128,6 +128,22 @@
     </div>
 
     <div class="box">
+      <h2>Assegna un trofeo</h2>
+      <div class="form-riga">
+        <div>
+          <label>Studente</label>
+          <select id="select-studente-trofeo"><option>Caricamento...</option></select>
+        </div>
+        <div>
+          <label>Trofeo</label>
+          <select id="select-trofeo-da-assegnare"><option>Caricamento...</option></select>
+        </div>
+      </div>
+      <button onclick="assegnaTrofeoSelezionato()">Assegna trofeo</button>
+      <div id="messaggio-assegna-trofeo" style="margin-top:8px; font-size:13px;"></div>
+    </div>
+
+    <div class="box">
       <h2>Gestione utenti e crediti</h2>
       <table>
         <thead>
@@ -168,6 +184,17 @@
     <a href="negozio.html">Torna al negozio</a>
   </div>
 
+  <!-- Modal storico studente -->
+  <div id="overlay-storico" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000; padding:20px;">
+    <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:100%; max-height:80vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="titolo-storico-studente" style="margin:0; font-size:16px;">Storico</h3>
+        <button onclick="chiudiStoricoStudente()" class="secondario" style="padding:4px 10px;">Chiudi</button>
+      </div>
+      <div id="contenuto-storico-studente" style="font-size:13px;">Caricamento...</div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://liasogcnxwgiabfcvzzx.supabase.co";
@@ -199,6 +226,64 @@
       document.getElementById("contenuto-admin").style.display = "block";
       caricaProdotti();
       caricaUtenti();
+      caricaTendineAssegnazione();
+    }
+
+    let listaUtentiCache = [];
+
+    async function caricaTendineAssegnazione() {
+      const { data: utenti } = await client.rpc("lista_utenti_admin");
+      const { data: trofei } = await client.from("trofei").select("id, nome");
+
+      const selectStudente = document.getElementById("select-studente-trofeo");
+      const selectTrofeo = document.getElementById("select-trofeo-da-assegnare");
+
+      if (utenti) {
+        selectStudente.innerHTML = utenti.map(u =>
+          `<option value="${u.id}">${u.email}${u.nome ? " (" + u.nome + ")" : ""}</option>`
+        ).join("");
+      }
+
+      if (trofei) {
+        selectTrofeo.innerHTML = trofei.map(t =>
+          `<option value="${t.id}">${t.nome}</option>`
+        ).join("");
+      }
+    }
+
+    async function assegnaTrofeoSelezionato() {
+      const idStudente = document.getElementById("select-studente-trofeo").value;
+      const idTrofeo = document.getElementById("select-trofeo-da-assegnare").value;
+      const messaggio = document.getElementById("messaggio-assegna-trofeo");
+
+      if (!idStudente || !idTrofeo) {
+        messaggio.textContent = "Seleziona sia lo studente che il trofeo.";
+        messaggio.style.color = "#dc2626";
+        return;
+      }
+
+      const { data, error } = await client.rpc("assegna_trofeo_admin", {
+        p_id_utente: idStudente,
+        p_id_trofeo: idTrofeo
+      });
+
+      if (error) {
+        messaggio.textContent = "Errore tecnico: " + error.message;
+        messaggio.style.color = "#dc2626";
+        return;
+      }
+
+      if (data === "ok") {
+        messaggio.textContent = "Trofeo assegnato! Lo studente vedrà la notifica al prossimo accesso.";
+        messaggio.style.color = "#16a34a";
+        caricaUtenti();
+      } else if (data === "gia_sbloccato") {
+        messaggio.textContent = "Questo studente ha già questo trofeo.";
+        messaggio.style.color = "#dc2626";
+      } else {
+        messaggio.textContent = "Errore: " + data;
+        messaggio.style.color = "#dc2626";
+      }
     }
 
     async function caricaUtenti() {
@@ -225,12 +310,17 @@
           <td>${u.nome || "—"}</td>
           <td id="saldo-${u.id}">${u.saldo} Ca$t</td>
           <td>
-            <div style="display:flex; gap:6px; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <input type="number" placeholder="es. 10 o -5" style="width:90px;" id="delta-${u.id}" />
               <button class="applica-credito">Applica</button>
+              <button class="secondario apri-storico">Storico</button>
             </div>
           </td>
         `;
+
+        riga.querySelector(".apri-storico").addEventListener("click", () => {
+          apriStoricoStudente(u.id, u.email);
+        });
 
         riga.querySelector(".applica-credito").addEventListener("click", async () => {
           const input = document.getElementById(`delta-${u.id}`);
@@ -341,6 +431,69 @@
         document.getElementById("nuovo-descrizione").value = "";
         caricaProdotti();
       }
+    }
+
+    async function apriStoricoStudente(idUtente, email) {
+      document.getElementById("titolo-storico-studente").textContent = "Storico — " + email;
+      document.getElementById("contenuto-storico-studente").innerHTML = "Caricamento...";
+      document.getElementById("overlay-storico").style.display = "flex";
+
+      const { data: transazioni, error } = await client
+        .from("transazioni")
+        .select("*")
+        .eq("id_utente", idUtente)
+        .order("data", { ascending: false });
+
+      const contenitore = document.getElementById("contenuto-storico-studente");
+
+      if (error) {
+        contenitore.innerHTML = "Errore nel caricamento.";
+        return;
+      }
+
+      if (transazioni.length === 0) {
+        contenitore.innerHTML = "Nessuna transazione ancora.";
+        return;
+      }
+
+      // Risolvo i nomi di prodotti e trofei coinvolti
+      const idRiferimenti = transazioni.map(t => t.riferimento_id).filter(Boolean);
+
+      const { data: prodotti } = await client.from("prodotti").select("id, nome").in("id", idRiferimenti);
+      const { data: trofei } = await client.from("trofei").select("id, nome").in("id", idRiferimenti);
+
+      const mappaNomi = {};
+      (prodotti || []).forEach(p => { mappaNomi[p.id] = p.nome; });
+      (trofei || []).forEach(t => { mappaNomi[t.id] = t.nome; });
+
+      const etichetteTipo = {
+        acquisto: "Acquisto",
+        trofeo: "Trofeo",
+        accredito_admin: "Modifica admin"
+      };
+
+      contenitore.innerHTML = transazioni.map(t => {
+        const data = new Date(t.data).toLocaleDateString("it-IT", {
+          day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+        const nome = mappaNomi[t.riferimento_id] || t.descrizione || "";
+        const colore = t.importo >= 0 ? "#16a34a" : "#dc2626";
+        const segno = t.importo >= 0 ? "+" : "";
+
+        return `
+          <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
+            <div>
+              <div style="font-weight:bold;">${etichetteTipo[t.tipo] || t.tipo}${nome ? " — " + nome : ""}</div>
+              <div style="font-size:11px; color:#888;">${data}</div>
+            </div>
+            <div style="color:${colore}; font-weight:bold;">${segno}${t.importo} Ca$t</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function chiudiStoricoStudente() {
+      document.getElementById("overlay-storico").style.display = "none";
     }
 
     async function logout() {
