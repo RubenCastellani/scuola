@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pannello admin — Cla$$$hop</title>
+  <title>Cla$$$hop</title>
   <style>
     body {
       font-family: -apple-system, sans-serif;
@@ -22,150 +22,100 @@
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
-    .header h1 { font-size: 18px; margin: 0; }
-    .header a { font-size: 13px; color: #18181b; text-decoration: underline; }
-
-    .box {
+    .header h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .saldo {
+      font-size: 16px;
+      font-weight: bold;
+      background: #16a34a;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .griglia {
       max-width: 900px;
-      margin: 0 auto 20px auto;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .card {
       background: white;
       border-radius: 12px;
-      padding: 20px;
+      padding: 16px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
     }
-    .box h2 { font-size: 16px; margin: 0 0 14px 0; }
-
-    .form-riga {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #e4e4e7;
+      margin-bottom: 12px;
+    }
+    .card h3 {
+      font-size: 15px;
+      margin: 0 0 6px 0;
+    }
+    .card p {
+      font-size: 13px;
+      color: #666;
+      flex-grow: 1;
+      margin: 0 0 12px 0;
+    }
+    .prezzo {
+      font-weight: bold;
+      color: #18181b;
       margin-bottom: 10px;
     }
-    input, textarea {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 13px;
-      font-family: inherit;
-      box-sizing: border-box;
-      width: 100%;
-    }
-    label { font-size: 11px; color: #666; display: block; margin-bottom: 2px; }
-    button {
+    button.acquista {
       background: #18181b;
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
     }
-    button:hover { background: #333; }
-    button.secondario {
-      background: #e4e4e7;
-      color: #333;
-    }
-    button.pericolo {
-      background: #dc2626;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    th, td {
-      text-align: left;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-    }
-    th { color: #666; font-weight: normal; }
-    .azioni { display: flex; gap: 6px; }
-    .azioni button { padding: 4px 10px; font-size: 12px; }
-
-    #accesso-negato {
-      max-width: 500px;
-      margin: 100px auto;
+    button.acquista:hover { background: #333; }
+    #messaggio-generale {
+      max-width: 900px;
+      margin: 0 auto 16px auto;
       text-align: center;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
-  <div id="contenuto-admin" style="display:none;">
-    <div class="header">
-      <h1>Pannello admin — Cla$$$hop</h1>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <a href="negozio.html">← Torna al negozio</a>
-        <button onclick="logout()" style="background:#e4e4e7; color:#333; border:none; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">Esci</button>
-      </div>
-    </div>
-
-    <div class="box">
-      <h2>Aggiungi un aiuto/prodotto</h2>
-      <div class="form-riga">
-        <div>
-          <label>Nome</label>
-          <input type="text" id="nuovo-nome" />
-        </div>
-        <div>
-          <label>Prezzo (Ca$t)</label>
-          <input type="number" id="nuovo-prezzo" />
-        </div>
-        <div>
-          <label>Immagine (URL, opzionale)</label>
-          <input type="text" id="nuovo-immagine" />
-        </div>
-      </div>
-      <div class="form-riga" style="grid-template-columns: 1fr;">
-        <div>
-          <label>Descrizione</label>
-          <textarea id="nuovo-descrizione" rows="2"></textarea>
-        </div>
-      </div>
-      <button onclick="aggiungiProdotto()">Aggiungi prodotto</button>
-      <div id="messaggio-nuovo-prodotto" style="margin-top:8px; font-size:13px;"></div>
-    </div>
-
-    <div class="box">
-      <h2>Gestione utenti e crediti</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nome</th>
-            <th>Saldo</th>
-            <th>Modifica crediti</th>
-          </tr>
-        </thead>
-        <tbody id="tabella-utenti">
-          <tr><td colspan="4">Caricamento...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="box">
-      <h2>Prodotti esistenti</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Prezzo</th>
-            <th>Disponibile</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="tabella-prodotti">
-          <tr><td colspan="4">Caricamento...</td></tr>
-        </tbody>
-      </table>
+  <div class="header">
+    <h1>Cla$$$hop</h1>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="trofei.html" style="font-size:13px; color:#18181b; text-decoration:underline;">Trofei</a>
+      <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">Lista acquisti</a>
+      <div class="saldo" id="saldo">Caricamento...</div>
+      <button onclick="logout()" style="background:#e4e4e7; color:#333; border:none; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">Esci</button>
     </div>
   </div>
 
-  <div id="accesso-negato" style="display:none;">
-    <h2>Accesso negato</h2>
-    <p>Questa pagina è riservata all'amministratore.</p>
-    <a href="negozio.html">Torna al negozio</a>
+  <div id="messaggio-generale"></div>
+
+  <div class="griglia" id="griglia-prodotti">
+    <p style="text-align:center; grid-column: 1 / -1;">Caricamento aiuti disponibili...</p>
+  </div>
+
+  <!-- Popup che appare quando si sblocca un nuovo trofeo -->
+  <div id="overlay-trofeo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:white; border-radius:16px; padding:32px; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+      <div style="font-size:48px; margin-bottom:8px;">🏆</div>
+      <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">Nuovo trofeo sbloccato!</div>
+      <div id="testo-popup-trofeo" style="font-size:14px; color:#555; margin-bottom:20px;"></div>
+      <button onclick="chiudiPopupTrofeo()" style="background:#18181b; color:white; border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-size:14px;">Fantastico!</button>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -177,169 +127,178 @@
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function inizializza() {
+      // Controlla se l'utente è loggato
       const { data: { session } } = await client.auth.getSession();
 
       if (!session) {
+        // Non loggato: rimanda al login
         window.location.href = "index.html";
         return;
       }
 
-      // Verifico che l'utente sia admin
-      const { data: profilo, error } = await client
-        .from("utenti")
-        .select("admin")
-        .eq("id", session.user.id)
-        .single();
-
-      if (error || !profilo || !profilo.admin) {
-        document.getElementById("accesso-negato").style.display = "block";
-        return;
-      }
-
-      document.getElementById("contenuto-admin").style.display = "block";
+      caricaSaldo(session.user.id);
       caricaProdotti();
-      caricaUtenti();
+      controllaTrofeiNonNotificati(session.user.id);
     }
 
-    async function caricaUtenti() {
-      const tabella = document.getElementById("tabella-utenti");
+    async function caricaSaldo(idUtente) {
+      const { data, error } = await client
+        .from("utenti")
+        .select("saldo")
+        .eq("id", idUtente)
+        .single();
 
-      const { data, error } = await client.rpc("lista_utenti_admin");
+      const saldoEl = document.getElementById("saldo");
 
       if (error) {
-        tabella.innerHTML = `<tr><td colspan="4">Errore: ${error.message}</td></tr>`;
-        return;
+        saldoEl.textContent = "Errore saldo";
+      } else {
+        saldoEl.textContent = data.saldo + " Ca$t";
       }
-
-      if (!data || data.length === 0) {
-        tabella.innerHTML = `<tr><td colspan="4">Nessun utente trovato.</td></tr>`;
-        return;
-      }
-
-      tabella.innerHTML = "";
-
-      data.forEach(u => {
-        const riga = document.createElement("tr");
-        riga.innerHTML = `
-          <td>${u.email}${u.admin ? " ⭐" : ""}</td>
-          <td>${u.nome || "—"}</td>
-          <td id="saldo-${u.id}">${u.saldo} Ca$t</td>
-          <td>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <input type="number" placeholder="es. 10 o -5" style="width:90px;" id="delta-${u.id}" />
-              <button class="applica-credito">Applica</button>
-            </div>
-          </td>
-        `;
-
-        riga.querySelector(".applica-credito").addEventListener("click", async () => {
-          const input = document.getElementById(`delta-${u.id}`);
-          const valore = parseInt(input.value);
-
-          if (isNaN(valore) || valore === 0) {
-            alert("Inserisci un numero diverso da zero (positivo per accreditare, negativo per togliere).");
-            return;
-          }
-
-          const { data: risultato, error: erroreRpc } = await client.rpc("accredita_crediti", {
-            p_id_utente: u.id,
-            p_importo: valore,
-            p_descrizione: "Modifica manuale dall'admin"
-          });
-
-          if (erroreRpc || risultato !== "ok") {
-            alert("Errore nell'applicare la modifica.");
-            return;
-          }
-
-          input.value = "";
-          caricaUtenti();
-        });
-
-        tabella.appendChild(riga);
-      });
     }
 
     async function caricaProdotti() {
-      const tabella = document.getElementById("tabella-prodotti");
+      const griglia = document.getElementById("griglia-prodotti");
 
       const { data, error } = await client
         .from("prodotti")
         .select("*")
-        .order("data_creazione", { ascending: false });
+        .eq("disponibile", true)
+        .order("prezzo_crediti", { ascending: true });
 
       if (error) {
-        tabella.innerHTML = `<tr><td colspan="4">Errore nel caricamento.</td></tr>`;
+        griglia.innerHTML = "<p>Errore nel caricamento degli aiuti.</p>";
         return;
       }
 
       if (data.length === 0) {
-        tabella.innerHTML = `<tr><td colspan="4">Nessun prodotto ancora.</td></tr>`;
+        griglia.innerHTML = "<p style='grid-column: 1 / -1; text-align:center;'>Nessun aiuto disponibile al momento.</p>";
         return;
       }
 
-      tabella.innerHTML = "";
+      griglia.innerHTML = "";
 
-      data.forEach(p => {
-        const riga = document.createElement("tr");
-        riga.innerHTML = `
-          <td>${p.nome}</td>
-          <td>${p.prezzo_crediti} Ca$t</td>
-          <td>${p.disponibile ? "Sì" : "No"}</td>
-          <td class="azioni">
-            <button class="secondario toggle-disponibile">${p.disponibile ? "Nascondi" : "Rendi visibile"}</button>
-            <button class="pericolo elimina">Elimina</button>
-          </td>
+      data.forEach(prodotto => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const immagine = prodotto.immagine_url
+          ? `<img src="${prodotto.immagine_url}" alt="${prodotto.nome}" />`
+          : `<div style="width:100%; height:120px; background:#e4e4e7; border-radius:8px; margin-bottom:12px;"></div>`;
+
+        card.innerHTML = `
+          ${immagine}
+          <h3>${prodotto.nome}</h3>
+          <p>${prodotto.descrizione ?? ""}</p>
+          <div class="prezzo">${prodotto.prezzo_crediti} Ca$t</div>
+          <button class="acquista">Ottieni</button>
+          <div class="messaggio-card" style="margin-top:8px; font-size:12px;"></div>
         `;
 
-        riga.querySelector(".toggle-disponibile").addEventListener("click", async () => {
-          await client.from("prodotti").update({ disponibile: !p.disponibile }).eq("id", p.id);
-          caricaProdotti();
+        const bottone = card.querySelector("button.acquista");
+        const messaggioCard = card.querySelector(".messaggio-card");
+
+        bottone.addEventListener("click", async () => {
+          bottone.disabled = true;
+          bottone.textContent = "Un attimo...";
+          messaggioCard.textContent = "";
+
+          const { data: { session } } = await client.auth.getSession();
+
+          const { data, error } = await client.rpc("acquista_prodotto", {
+            p_id_prodotto: prodotto.id
+          });
+
+          bottone.disabled = false;
+          bottone.textContent = "Ottieni";
+
+          if (error) {
+            messaggioCard.textContent = "Errore tecnico, riprova.";
+            messaggioCard.style.color = "#dc2626";
+            return;
+          }
+
+          if (data.status === "ok") {
+            messaggioCard.textContent = "Ottenuto!";
+            messaggioCard.style.color = "#16a34a";
+            caricaSaldo(session.user.id);
+
+            if (data.trofei_sbloccati && data.trofei_sbloccati.length > 0) {
+              mostraPopupTrofeo(data.trofei_sbloccati);
+            }
+          } else if (data.status === "saldo_insufficiente") {
+            messaggioCard.textContent = "Ca$t insufficienti.";
+            messaggioCard.style.color = "#dc2626";
+          } else if (data.status === "prodotto_non_disponibile") {
+            messaggioCard.textContent = "Non più disponibile.";
+            messaggioCard.style.color = "#dc2626";
+          } else {
+            messaggioCard.textContent = "Errore: " + data.status;
+            messaggioCard.style.color = "#dc2626";
+          }
         });
 
-        riga.querySelector(".elimina").addEventListener("click", async () => {
-          const conferma = confirm(`Eliminare definitivamente "${p.nome}"?`);
-          if (!conferma) return;
-          await client.from("prodotti").delete().eq("id", p.id);
-          caricaProdotti();
-        });
-
-        tabella.appendChild(riga);
+        griglia.appendChild(card);
       });
     }
 
-    async function aggiungiProdotto() {
-      const nome = document.getElementById("nuovo-nome").value.trim();
-      const prezzo = parseInt(document.getElementById("nuovo-prezzo").value);
-      const immagine = document.getElementById("nuovo-immagine").value.trim();
-      const descrizione = document.getElementById("nuovo-descrizione").value.trim();
-      const messaggio = document.getElementById("messaggio-nuovo-prodotto");
+    async function controllaTrofeiNonNotificati(idUtente) {
+      const { data: nonNotificati, error } = await client
+        .from("utente_trofei")
+        .select("id, id_trofeo")
+        .eq("id_utente", idUtente)
+        .eq("notificato", false);
 
-      if (!nome || isNaN(prezzo)) {
-        messaggio.textContent = "Inserisci almeno nome e prezzo.";
-        messaggio.style.color = "#dc2626";
-        return;
+      if (error || !nonNotificati || nonNotificati.length === 0) return;
+
+      const idTrofei = nonNotificati.map(n => n.id_trofeo);
+
+      const { data: trofei } = await client
+        .from("trofei")
+        .select("id, nome, punti_ricompensa")
+        .in("id", idTrofei);
+
+      const mappaTrofei = {};
+      (trofei || []).forEach(t => { mappaTrofei[t.id] = t; });
+
+      const listaPerPopup = nonNotificati.map(n => mappaTrofei[n.id_trofeo]).filter(Boolean);
+
+      if (listaPerPopup.length > 0) {
+        mostraPopupTrofeo(listaPerPopup);
       }
 
-      const { error } = await client.from("prodotti").insert({
-        nome: nome,
-        prezzo_crediti: prezzo,
-        immagine_url: immagine || null,
-        descrizione: descrizione || null,
-        disponibile: true
-      });
+      // Segna tutti come notificati, ora che li abbiamo mostrati
+      for (const n of nonNotificati) {
+        await client
+          .from("utente_trofei")
+          .update({ notificato: true })
+          .eq("id", n.id);
+      }
+    }
 
-      if (error) {
-        messaggio.textContent = "Errore: " + error.message;
-        messaggio.style.color = "#dc2626";
-      } else {
-        messaggio.textContent = "Prodotto aggiunto!";
-        messaggio.style.color = "#16a34a";
-        document.getElementById("nuovo-nome").value = "";
-        document.getElementById("nuovo-prezzo").value = "";
-        document.getElementById("nuovo-immagine").value = "";
-        document.getElementById("nuovo-descrizione").value = "";
-        caricaProdotti();
+    function mostraPopupTrofeo(trofei, indice) {
+      indice = indice || 0;
+      if (indice >= trofei.length) return;
+
+      const trofeo = trofei[indice];
+      document.getElementById("testo-popup-trofeo").textContent =
+        `"${trofeo.nome}" — hai guadagnato ${trofeo.punti_ricompensa} Ca$t in più!`;
+
+      const overlay = document.getElementById("overlay-trofeo");
+      overlay.style.display = "flex";
+      overlay.dataset.indice = indice;
+      overlay.dataset.totale = trofei.length;
+      window._trofeiInCoda = trofei;
+    }
+
+    function chiudiPopupTrofeo() {
+      const overlay = document.getElementById("overlay-trofeo");
+      const prossimoIndice = parseInt(overlay.dataset.indice) + 1;
+      overlay.style.display = "none";
+
+      // Se c'erano più trofei sbloccati insieme, mostra il prossimo
+      if (window._trofeiInCoda && prossimoIndice < window._trofeiInCoda.length) {
+        mostraPopupTrofeo(window._trofeiInCoda, prossimoIndice);
       }
     }
 
