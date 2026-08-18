@@ -98,6 +98,7 @@
       <a href="trofei.html" style="font-size:13px; color:#18181b; text-decoration:underline;">Trofei</a>
       <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">Lista acquisti</a>
       <div class="saldo" id="saldo">Caricamento...</div>
+      <button onclick="logout()" style="background:#e4e4e7; color:#333; border:none; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">Esci</button>
     </div>
   </div>
 
@@ -299,6 +300,11 @@
       if (window._trofeiInCoda && prossimoIndice < window._trofeiInCoda.length) {
         mostraPopupTrofeo(window._trofeiInCoda, prossimoIndice);
       }
+    }
+
+    async function logout() {
+      await client.auth.signOut();
+      window.location.href = "index.html";
     }
 
     inizializza();
