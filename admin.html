@@ -95,7 +95,10 @@
   <div id="contenuto-admin" style="display:none;">
     <div class="header">
       <h1>Pannello admin — Cla$$$hop</h1>
-      <a href="negozio.html">← Torna al negozio</a>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <a href="negozio.html">← Torna al negozio</a>
+        <button onclick="logout()" style="background:#e4e4e7; color:#333; border:none; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">Esci</button>
+      </div>
     </div>
 
     <div class="box">
@@ -122,6 +125,23 @@
       </div>
       <button onclick="aggiungiProdotto()">Aggiungi prodotto</button>
       <div id="messaggio-nuovo-prodotto" style="margin-top:8px; font-size:13px;"></div>
+    </div>
+
+    <div class="box">
+      <h2>Gestione utenti e crediti</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th>Saldo</th>
+            <th>Modifica crediti</th>
+          </tr>
+        </thead>
+        <tbody id="tabella-utenti">
+          <tr><td colspan="4">Caricamento...</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="box">
@@ -178,6 +198,66 @@
 
       document.getElementById("contenuto-admin").style.display = "block";
       caricaProdotti();
+      caricaUtenti();
+    }
+
+    async function caricaUtenti() {
+      const tabella = document.getElementById("tabella-utenti");
+
+      const { data, error } = await client.rpc("lista_utenti_admin");
+
+      if (error) {
+        tabella.innerHTML = `<tr><td colspan="4">Errore: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tabella.innerHTML = `<tr><td colspan="4">Nessun utente trovato.</td></tr>`;
+        return;
+      }
+
+      tabella.innerHTML = "";
+
+      data.forEach(u => {
+        const riga = document.createElement("tr");
+        riga.innerHTML = `
+          <td>${u.email}${u.admin ? " ⭐" : ""}</td>
+          <td>${u.nome || "—"}</td>
+          <td id="saldo-${u.id}">${u.saldo} Ca$t</td>
+          <td>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" placeholder="es. 10 o -5" style="width:90px;" id="delta-${u.id}" />
+              <button class="applica-credito">Applica</button>
+            </div>
+          </td>
+        `;
+
+        riga.querySelector(".applica-credito").addEventListener("click", async () => {
+          const input = document.getElementById(`delta-${u.id}`);
+          const valore = parseInt(input.value);
+
+          if (isNaN(valore) || valore === 0) {
+            alert("Inserisci un numero diverso da zero (positivo per accreditare, negativo per togliere).");
+            return;
+          }
+
+          const { data: risultato, error: erroreRpc } = await client.rpc("accredita_crediti", {
+            p_id_utente: u.id,
+            p_importo: valore,
+            p_descrizione: "Modifica manuale dall'admin"
+          });
+
+          if (erroreRpc || risultato !== "ok") {
+            alert("Errore nell'applicare la modifica.");
+            return;
+          }
+
+          input.value = "";
+          caricaUtenti();
+        });
+
+        tabella.appendChild(riga);
+      });
     }
 
     async function caricaProdotti() {
@@ -261,6 +341,11 @@
         document.getElementById("nuovo-descrizione").value = "";
         caricaProdotti();
       }
+    }
+
+    async function logout() {
+      await client.auth.signOut();
+      window.location.href = "index.html";
     }
 
     inizializza();
