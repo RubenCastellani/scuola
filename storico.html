@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cla$$$hop</title>
+  <title>I miei ottenuti</title>
   <style>
     body {
       font-family: -apple-system, sans-serif;
@@ -12,7 +12,7 @@
       padding: 20px;
     }
     .header {
-      max-width: 900px;
+      max-width: 700px;
       margin: 0 auto 24px auto;
       display: flex;
       flex-wrap: wrap;
@@ -28,96 +28,57 @@
       font-size: 18px;
       margin: 0;
     }
-    .saldo {
-      font-size: 16px;
-      font-weight: bold;
-      background: #16a34a;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
+    .header a {
+      font-size: 13px;
+      color: #18181b;
+      text-decoration: underline;
     }
-    .griglia {
-      max-width: 900px;
+    .lista {
+      max-width: 700px;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
+      gap: 10px;
     }
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 8px;
-      background: #e4e4e7;
-      margin-bottom: 12px;
+    .riga {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .card h3 {
-      font-size: 15px;
-      margin: 0 0 6px 0;
-    }
-    .card p {
-      font-size: 13px;
-      color: #666;
-      flex-grow: 1;
-      margin: 0 0 12px 0;
-    }
-    .prezzo {
+    .riga .nome {
       font-weight: bold;
-      color: #18181b;
-      margin-bottom: 10px;
-    }
-    button.acquista {
-      background: #18181b;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
       font-size: 14px;
     }
-    button.acquista:hover { background: #333; }
-    #messaggio-generale {
-      max-width: 900px;
-      margin: 0 auto 16px auto;
+    .riga .data {
+      font-size: 12px;
+      color: #888;
+    }
+    .riga .importo {
+      font-size: 13px;
+      font-weight: bold;
+      color: #dc2626;
+    }
+    #vuoto {
       text-align: center;
+      color: #666;
       font-size: 14px;
+      margin-top: 40px;
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>Cla$$$hop</h1>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <a href="trofei.html" style="font-size:13px; color:#18181b; text-decoration:underline;">Trofei</a>
-      <a href="storico.html" id="link-storico" style="font-size:13px; color:#18181b; text-decoration:underline;">Lista acquisti</a>
-      <div class="saldo" id="saldo">Caricamento...</div>
-      <button onclick="logout()" style="background:#e4e4e7; color:#333; border:none; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">Esci</button>
-    </div>
+    <h1>I miei ottenuti</h1>
+    <a href="negozio.html">← Torna al negozio</a>
   </div>
 
-  <div id="messaggio-generale"></div>
-
-  <div class="griglia" id="griglia-prodotti">
-    <p style="text-align:center; grid-column: 1 / -1;">Caricamento aiuti disponibili...</p>
-  </div>
-
-  <!-- Popup che appare quando si sblocca un nuovo trofeo -->
-  <div id="overlay-trofeo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-    <div style="background:white; border-radius:16px; padding:32px; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
-      <div style="font-size:48px; margin-bottom:8px;">🏆</div>
-      <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">Nuovo trofeo sbloccato!</div>
-      <div id="testo-popup-trofeo" style="font-size:14px; color:#555; margin-bottom:20px;"></div>
-      <button onclick="chiudiPopupTrofeo()" style="background:#18181b; color:white; border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-size:14px;">Fantastico!</button>
-    </div>
+  <div class="lista" id="lista-storico">
+    <p style="text-align:center;">Caricamento...</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -129,184 +90,121 @@
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function inizializza() {
-      // Controlla se l'utente è loggato
       const { data: { session } } = await client.auth.getSession();
 
       if (!session) {
-        // Non loggato: rimanda al login
         window.location.href = "index.html";
         return;
       }
 
-      caricaSaldo(session.user.id);
-      caricaProdotti();
-      controllaTrofeiNonNotificati(session.user.id);
+      caricaStorico(session.user.id);
     }
 
-    async function caricaSaldo(idUtente) {
-      const { data, error } = await client
-        .from("utenti")
-        .select("saldo")
-        .eq("id", idUtente)
-        .single();
+    async function caricaStorico(idUtente) {
+      const lista = document.getElementById("lista-storico");
 
-      const saldoEl = document.getElementById("saldo");
-
-      if (error) {
-        saldoEl.textContent = "Errore saldo";
-      } else {
-        saldoEl.textContent = data.saldo + " Ca$t";
-      }
-    }
-
-    async function caricaProdotti() {
-      const griglia = document.getElementById("griglia-prodotti");
-
-      const { data, error } = await client
-        .from("prodotti")
+      const { data: transazioni, error } = await client
+        .from("transazioni")
         .select("*")
-        .eq("disponibile", true)
-        .order("prezzo_crediti", { ascending: true });
+        .eq("id_utente", idUtente)
+        .eq("tipo", "acquisto")
+        .order("data", { ascending: false });
 
       if (error) {
-        griglia.innerHTML = "<p>Errore nel caricamento degli aiuti.</p>";
+        lista.innerHTML = "<p id='vuoto'>Errore nel caricamento.</p>";
         return;
       }
 
-      if (data.length === 0) {
-        griglia.innerHTML = "<p style='grid-column: 1 / -1; text-align:center;'>Nessun aiuto disponibile al momento.</p>";
+      if (transazioni.length === 0) {
+        lista.innerHTML = "<p id='vuoto'>Non hai ancora ottenuto nulla dal negozio.</p>";
         return;
       }
 
-      griglia.innerHTML = "";
+      const idProdotti = transazioni.map(t => t.riferimento_id).filter(Boolean);
 
-      data.forEach(prodotto => {
-        const card = document.createElement("div");
-        card.className = "card";
+      const { data: prodotti } = await client
+        .from("prodotti")
+        .select("id, nome")
+        .in("id", idProdotti);
 
-        const immagine = prodotto.immagine_url
-          ? `<img src="${prodotto.immagine_url}" alt="${prodotto.nome}" />`
-          : `<div style="width:100%; height:120px; background:#e4e4e7; border-radius:8px; margin-bottom:12px;"></div>`;
+      const mappaProdotti = {};
+      (prodotti || []).forEach(p => { mappaProdotti[p.id] = p.nome; });
 
-        card.innerHTML = `
-          ${immagine}
-          <h3>${prodotto.nome}</h3>
-          <p>${prodotto.descrizione ?? ""}</p>
-          <div class="prezzo">${prodotto.prezzo_crediti} Ca$t</div>
-          <button class="acquista">Ottieni</button>
-          <div class="messaggio-card" style="margin-top:8px; font-size:12px;"></div>
-        `;
+      const daUsare = transazioni.filter(t => !t.usato);
+      const usati = transazioni.filter(t => t.usato);
 
-        const bottone = card.querySelector("button.acquista");
-        const messaggioCard = card.querySelector(".messaggio-card");
+      lista.innerHTML = "";
 
+      const titoloDaUsare = document.createElement("h2");
+      titoloDaUsare.style.cssText = "font-size:14px; color:#333; margin: 10px 0 4px 4px;";
+      titoloDaUsare.textContent = `Da usare (${daUsare.length})`;
+      lista.appendChild(titoloDaUsare);
+
+      if (daUsare.length === 0) {
+        const vuoto = document.createElement("p");
+        vuoto.style.cssText = "font-size:13px; color:#888; margin: 0 0 10px 4px;";
+        vuoto.textContent = "Nessun oggetto in attesa di utilizzo.";
+        lista.appendChild(vuoto);
+      } else {
+        daUsare.forEach(t => lista.appendChild(creaRiga(t, mappaProdotti, true)));
+      }
+
+      const titoloUsati = document.createElement("h2");
+      titoloUsati.style.cssText = "font-size:14px; color:#333; margin: 20px 0 4px 4px;";
+      titoloUsati.textContent = `Già usati (${usati.length})`;
+      lista.appendChild(titoloUsati);
+
+      usati.forEach(t => lista.appendChild(creaRiga(t, mappaProdotti, false)));
+    }
+
+    function creaRiga(t, mappaProdotti, attivo) {
+      const nomeProdotto = mappaProdotti[t.riferimento_id] || "Prodotto";
+      const data = new Date(t.data).toLocaleDateString("it-IT", {
+        day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+
+      const riga = document.createElement("div");
+      riga.className = "riga";
+      riga.style.opacity = attivo ? "1" : "0.55";
+
+      riga.innerHTML = `
+        <div>
+          <div class="nome">${nomeProdotto}</div>
+          <div class="data">${data}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="importo">${t.importo} Ca$t</div>
+          ${attivo ? `<button class="usa-ora">Usa ora</button>` : `<span style="font-size:12px; color:#888;">Usato</span>`}
+        </div>
+      `;
+
+      if (attivo) {
+        const bottone = riga.querySelector(".usa-ora");
+        bottone.style.cssText = "background:#18181b; color:white; border:none; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;";
         bottone.addEventListener("click", async () => {
+          const conferma = confirm(`Confermi di voler usare "${nomeProdotto}" adesso?`);
+          if (!conferma) return;
+
           bottone.disabled = true;
-          bottone.textContent = "Un attimo...";
-          messaggioCard.textContent = "";
+          bottone.textContent = "...";
 
-          const { data: { session } } = await client.auth.getSession();
-
-          const { data, error } = await client.rpc("acquista_prodotto", {
-            p_id_prodotto: prodotto.id
-          });
-
-          bottone.disabled = false;
-          bottone.textContent = "Ottieni";
+          const { error } = await client
+            .from("transazioni")
+            .update({ usato: true, data_utilizzo: new Date().toISOString() })
+            .eq("id", t.id);
 
           if (error) {
-            messaggioCard.textContent = "Errore tecnico, riprova.";
-            messaggioCard.style.color = "#dc2626";
-            return;
-          }
-
-          if (data.status === "ok") {
-            messaggioCard.textContent = "Ottenuto!";
-            messaggioCard.style.color = "#16a34a";
-            caricaSaldo(session.user.id);
-
-            if (data.trofei_sbloccati && data.trofei_sbloccati.length > 0) {
-              mostraPopupTrofeo(data.trofei_sbloccati);
-            }
-          } else if (data.status === "saldo_insufficiente") {
-            messaggioCard.textContent = "Ca$t insufficienti.";
-            messaggioCard.style.color = "#dc2626";
-          } else if (data.status === "prodotto_non_disponibile") {
-            messaggioCard.textContent = "Non più disponibile.";
-            messaggioCard.style.color = "#dc2626";
+            alert("Errore, riprova.");
+            bottone.disabled = false;
+            bottone.textContent = "Usa ora";
           } else {
-            messaggioCard.textContent = "Errore: " + data.status;
-            messaggioCard.style.color = "#dc2626";
+            const { data: { session } } = await client.auth.getSession();
+            caricaStorico(session.user.id);
           }
         });
-
-        griglia.appendChild(card);
-      });
-    }
-
-    async function controllaTrofeiNonNotificati(idUtente) {
-      const { data: nonNotificati, error } = await client
-        .from("utente_trofei")
-        .select("id, id_trofeo")
-        .eq("id_utente", idUtente)
-        .eq("notificato", false);
-
-      if (error || !nonNotificati || nonNotificati.length === 0) return;
-
-      const idTrofei = nonNotificati.map(n => n.id_trofeo);
-
-      const { data: trofei } = await client
-        .from("trofei")
-        .select("id, nome, punti_ricompensa")
-        .in("id", idTrofei);
-
-      const mappaTrofei = {};
-      (trofei || []).forEach(t => { mappaTrofei[t.id] = t; });
-
-      const listaPerPopup = nonNotificati.map(n => mappaTrofei[n.id_trofeo]).filter(Boolean);
-
-      if (listaPerPopup.length > 0) {
-        mostraPopupTrofeo(listaPerPopup);
       }
 
-      // Segna tutti come notificati, ora che li abbiamo mostrati
-      for (const n of nonNotificati) {
-        await client
-          .from("utente_trofei")
-          .update({ notificato: true })
-          .eq("id", n.id);
-      }
-    }
-
-    function mostraPopupTrofeo(trofei, indice) {
-      indice = indice || 0;
-      if (indice >= trofei.length) return;
-
-      const trofeo = trofei[indice];
-      document.getElementById("testo-popup-trofeo").textContent =
-        `"${trofeo.nome}" — hai guadagnato ${trofeo.punti_ricompensa} Ca$t in più!`;
-
-      const overlay = document.getElementById("overlay-trofeo");
-      overlay.style.display = "flex";
-      overlay.dataset.indice = indice;
-      overlay.dataset.totale = trofei.length;
-      window._trofeiInCoda = trofei;
-    }
-
-    function chiudiPopupTrofeo() {
-      const overlay = document.getElementById("overlay-trofeo");
-      const prossimoIndice = parseInt(overlay.dataset.indice) + 1;
-      overlay.style.display = "none";
-
-      // Se c'erano più trofei sbloccati insieme, mostra il prossimo
-      if (window._trofeiInCoda && prossimoIndice < window._trofeiInCoda.length) {
-        mostraPopupTrofeo(window._trofeiInCoda, prossimoIndice);
-      }
-    }
-
-    async function logout() {
-      await client.auth.signOut();
-      window.location.href = "index.html";
+      return riga;
     }
 
     inizializza();
