@@ -15,8 +15,10 @@
       max-width: 900px;
       margin: 0 auto 24px auto;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       background: white;
       padding: 16px 20px;
       border-radius: 12px;
@@ -69,10 +71,14 @@
       background: #dc2626;
     }
 
+    .tabella-scroll {
+      overflow-x: auto;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      min-width: 480px;
     }
     th, td {
       text-align: left;
@@ -145,6 +151,7 @@
 
     <div class="box">
       <h2>Gestione utenti e crediti</h2>
+      <div class="tabella-scroll">
       <table>
         <thead>
           <tr>
@@ -158,10 +165,12 @@
           <tr><td colspan="4">Caricamento...</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div class="box">
       <h2>Prodotti esistenti</h2>
+      <div class="tabella-scroll">
       <table>
         <thead>
           <tr>
@@ -175,6 +184,7 @@
           <tr><td colspan="4">Caricamento...</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 
